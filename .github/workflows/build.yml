@@ -16,6 +16,7 @@ jobs:
           path: "PE"
       - name: generate-datapack1
         run: |
+          mkdir -p DirtPE/data/projecte/
           cp -r PE/src/datagen/generated/data/projecte/recipe DirtPE/data/projecte/
           cd DirtPE/data/projecte/
           find . -type f -exec truncate -s 0 {} \;
