@@ -1,0 +1,55 @@
+name: build
+on: [pull_request, push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v3
+
+      - name: checkout PE repository
+        uses: actions/checkout@v3
+        with:
+          repository: "sinkillerj/ProjectE"
+          ref: "mc1.21.1"
+          path: "PE"
+      - name: generate-datapack1
+        run: |
+          cp -r PE/src/datagen/generated/data/projecte/recipe DirtPE/data/projecte/
+          cd DirtPE/data/projecte/
+          find . -type f -exec truncate -s 0 {} \;
+
+      - name: generate-datapack2
+        run: |
+          mv -f transmutation_table.json DirtPE/data/projecte/recipe/transmutation_table.json
+          mv -f transmutation_tablet.json DirtPE/data/projecte/recipe/transmutation_tablet.json
+          zip -r DirtPE_datapack.zip DirtPE/*
+
+      - name: capture build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Artifacts
+          path: |
+            DirtPE_datapack.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Artifacts
+          path: build/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Version ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          files: |
+            build/DirtPE_datapack.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
